@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>STUDY STREAK, Build Your Discipline</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{display:['Archivo','sans-serif'],sans:['IBM Plex Sans','sans-serif'],mono:['IBM Plex Mono','monospace']}}}}</script>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;background:#0F1210}
+body{font-family:'IBM Plex Sans',sans-serif;color:#E9EDE4;min-height:100vh}
+.bg{min-height:100vh;background:radial-gradient(700px 480px at 8% 4%,rgba(200,245,74,.14),transparent 62%),radial-gradient(760px 520px at 96% 38%,rgba(40,140,110,.20),transparent 62%),radial-gradient(640px 460px at 30% 100%,rgba(200,245,74,.08),transparent 62%),#0F1210;background-attachment:fixed}
+.glass{background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.03));backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 12px 36px rgba(0,0,0,.35)}
+.fire{background:#C8F54A;color:#0c0f0b}
+input:focus,button:focus-visible{outline:2px solid #C8F54A;outline-offset:2px}
+button{cursor:pointer}button:disabled{cursor:default}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/framer-motion@10.18.0/dist/framer-motion.js"></script>
+<script>
+window.onerror=function(m){var r=document.getElementById("root");if(r&&!r.children.length)r.innerHTML='<pre style="color:#E5614F;padding:16px;white-space:pre-wrap">Startup error: '+String(m)+'</pre>'};
+</script>
+<script>
+const { useState, useEffect } = React;
+const { motion, AnimatePresence } = Motion;
+const mk = (body, fill) => ({ size = 24, className, style, strokeWidth = 2 }) => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: fill ? "currentColor" : "none", stroke: fill ? "none" : "currentColor", strokeWidth, strokeLinecap: "square", strokeLinejoin: "miter", className, style, "aria-hidden": true, dangerouslySetInnerHTML: { __html: body } });
+const Flame = mk('<polygon points="12,1 18,9 20,16 16,22 8,22 4,16 6,10 9,13"/>', true);
+const Trophy = mk('<path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H3v2a3 3 0 0 0 4 3"/><path d="M17 6h4v2a3 3 0 0 1-4 3"/><path d="M12 15v4M8 21h8"/>');
+const CalendarDays = mk('<rect x="3" y="5" width="18" height="16"/><path d="M3 10h18M8 3v4M16 3v4"/>');
+const Target = mk('<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>');
+const LogOut = mk('<path d="M10 4H4v16h6M15 8l4 4-4 4M19 12H9"/>');
+const Pencil = mk('<path d="M4 20l1-5L16 4l4 4L9 19z"/><path d="M13 7l4 4"/>');
+const ChevronLeft = mk('<path d="M15 5l-7 7 7 7"/>');
+const ChevronRight = mk('<path d="M9 5l7 7-7 7"/>');
+const Check = mk('<path d="M4 12l5 5L20 6"/>');
+const X = mk('<path d="M5 5l14 14M19 5L5 19"/>');
+const Clock = mk('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/>');
+const Quote = mk('<path d="M3 18v-7c0-4 2-6 6-7v3c-2 .7-3 2-3 4h4v7zM14 18v-7c0-4 2-6 6-7v3c-2 .7-3 2-3 4h4v7z"/>', true);
+const Plus = mk('<path d="M12 5v14M5 12h14"/>');
+const Timer = mk('<circle cx="12" cy="14" r="7"/><path d="M12 14v-4M9 2h6"/>');
+const pad = (n) => String(n).padStart(2, "0");
+const key = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = (k) => {
+  const [y, m, d] = k.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+const addDays = (k, n) => {
+  const d = parse(k);
+  d.setDate(d.getDate() + n);
+  return key(d);
+};
+const gap = (a, b) => Math.round((parse(b).getTime() - parse(a).getTime()) / 864e5);
+const rd = (k, f) => {
+  try {
+    const v = localStorage.getItem(k);
+    return v ? JSON.parse(v) : f;
+  } catch (e) {
+    return f;
+  }
+};
+const wr = (k, v) => {
+  try {
+    localStorage.setItem(k, JSON.stringify(v));
+  } catch (e) {
+  }
+};
+const fmt = (m) => `${Math.floor(m / 60)}h ${m % 60}m`;
+const QUOTES = ["Discipline is choosing what you want most over what you want now.", "Small daily efforts compound into extraordinary results.", "You do not need motivation. You need a routine.", "Show up today. Your future self is watching.", "Consistency beats intensity every single time.", "One more day. One more page. One step closer.", "The streak is built by the days you did not feel like it.", "Do today what others will not, to have tomorrow what others cannot.", "Progress is quiet. Keep going.", "Your habits write your story. Make today count."];
+function stats(done, today) {
+  const days = Object.keys(done).filter((k) => done[k] && k <= today).sort();
+  let longest = 0, run = 0, prev = "";
+  for (const k of days) {
+    run = prev && addDays(prev, 1) === k ? run + 1 : 1;
+    longest = Math.max(longest, run);
+    prev = k;
+  }
+  let cur = 0, c = done[today] ? today : addDays(today, -1);
+  while (done[c]) {
+    cur++;
+    c = addDays(c, -1);
+  }
+  return { current: cur, longest, total: days.length };
+}
+function useNow() {
+  const [n, setN] = useState(/* @__PURE__ */ new Date());
+  useEffect(() => {
+    const t = setInterval(() => setN(/* @__PURE__ */ new Date()), 1e3);
+    const v = () => setN(/* @__PURE__ */ new Date());
+    document.addEventListener("visibilitychange", v);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", v);
+    };
+  }, []);
+  return n;
+}
+function Burst() {
+  const parts = Array.from({ length: 20 }, (_, i) => i);
+  return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-50 pointer-events-none flex items-center justify-center" }, parts.map((i) => {
+    const a = i / 20 * Math.PI * 2;
+    return /* @__PURE__ */ React.createElement(
+      motion.div,
+      {
+        key: i,
+        className: "absolute w-2.5 h-2.5 rounded-sm",
+        style: { background: i % 2 ? "#C8F54A" : "#E9EDE4" },
+        initial: { x: 0, y: 0, opacity: 1, scale: 1 },
+        animate: { x: Math.cos(a) * 190, y: Math.sin(a) * 190, opacity: 0, scale: 0.3, rotate: 180 },
+        transition: { duration: 1.1, ease: "easeOut" }
+      }
+    );
+  }), /* @__PURE__ */ React.createElement(motion.div, { className: "w-24 h-24 rounded-sm bg-[#C8F54A] flex items-center justify-center ", initial: { scale: 0 }, animate: { scale: [0, 1.25, 1], opacity: [1, 1, 0] }, transition: { duration: 1.3, times: [0, 0.4, 1] } }, /* @__PURE__ */ React.createElement(Check, { size: 52, color: "#0c0f0b", strokeWidth: 3 })));
+}
+const Github = mk('<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>');
+const Instagram = mk('<rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/>');
+const Linkedin = mk('<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/>');
+const SOCIALS = [{ n: "GitHub", h: "https://github.com/rajdeep-commits2007", I: Github }, { n: "Instagram", h: "https://www.instagram.com/boi_rajdeep", I: Instagram }, { n: "LinkedIn", h: "https://www.linkedin.com/in/rajdeep-maji-5ba27042b", I: Linkedin }];
+function Socials({ center }) {
+  return /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 " + (center ? "justify-center" : "") }, SOCIALS.map(({ n, h, I }) => /* @__PURE__ */ React.createElement("a", { key: n, href: h, target: "_blank", rel: "noopener noreferrer", "aria-label": n, className: "flex items-center gap-2 rounded-md border border-[#262E28] bg-[#1B211C] px-3 py-2 text-sm text-[#C5CCC0] hover:border-[#C8F54A]/60 hover:text-[#C8F54A] transition" }, /* @__PURE__ */ React.createElement(I, { size: 16 }), n)));
+}
+function Login({ users, onLogin }) {
+  const [name, setName] = useState("");
+  const go = () => {
+    if (name.trim()) onLogin(name.trim());
+  };
+  return /* @__PURE__ */ React.createElement("div", { className: "bg flex items-center justify-center p-4" }, /* @__PURE__ */ React.createElement(motion.div, { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6 }, className: "glass rounded-lg p-8 sm:p-10 w-full max-w-md" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 justify-center mb-8" }, /* @__PURE__ */ React.createElement(Flame, { className: "text-[#C8F54A]", size: 30 }), /* @__PURE__ */ React.createElement("span", { className: "font-display font-extrabold text-2xl tracking-wider" }, "STREAK 365")), /* @__PURE__ */ React.createElement("h1", { className: "font-display font-bold text-2xl sm:text-3xl text-center leading-tight" }, "Welcome Back, Future Achiever!"), /* @__PURE__ */ React.createElement("p", { className: "text-[#8A948B] text-center mt-3 text-sm" }, "Study every day. Never break the chain."), /* @__PURE__ */ React.createElement("label", { className: "block mt-8 text-xs uppercase tracking-widest text-[#8A948B]" }, "Enter Your Name"), /* @__PURE__ */ React.createElement("input", { value: name, onChange: (e) => setName(e.target.value), onKeyDown: (e) => e.key === "Enter" && go(), maxLength: 24, placeholder: "Your name", className: "mt-2 w-full rounded-md bg-[#1B211C] border border-[#262E28] px-4 py-3 text-[#0c0f0b] placeholder-[#6B746C]" }), /* @__PURE__ */ React.createElement("button", { onClick: go, disabled: !name.trim(), className: "fire mt-4 w-full rounded-md py-3.5 font-display font-bold tracking-wide text-[#0c0f0b] disabled:opacity-40 hover:brightness-110 active:scale-[.98] transition" }, "START MY JOURNEY"), users.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "mt-8" }, /* @__PURE__ */ React.createElement("div", { className: "text-xs uppercase tracking-widest text-[#6B746C] mb-2" }, "Saved profiles"), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2" }, users.map((u) => /* @__PURE__ */ React.createElement("button", { key: u.id, onClick: () => onLogin(u.name), className: "rounded-lg border border-[#262E28] bg-[#1B211C] px-3 py-2 text-sm hover:border-[#C8F54A]/60 transition" }, u.name)))), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] text-[#6B746C] text-center mt-8" }, "Name-based profiles keep records separate on this device. This is not secure sign-in."), /* @__PURE__ */ React.createElement("div", { className: "mt-6 pt-6 border-t border-[#262E28]" }, /* @__PURE__ */ React.createElement("div", { className: "text-center text-[11px] uppercase tracking-widest text-[#6B746C] mb-3" }, "Built by RAJDEEP MAJI"), /* @__PURE__ */ React.createElement(Socials, { center: true }))));
+}
+const parseCode = (t) => {
+  try {
+    t = t.trim();
+    if (t.indexOf("SS1.") !== 0) return null;
+    const o = JSON.parse(decodeURIComponent(escape(atob(t.slice(4)))));
+    if (typeof o.i !== "string" || typeof o.n !== "string" || !o.n.trim()) return null;
+    return { i: o.i.slice(0, 40), n: o.n.trim().slice(0, 24), c: Math.max(0, +o.c || 0), l: Math.max(0, +o.l || 0), t: Math.max(0, +o.t || 0), d: typeof o.d === "string" ? o.d.slice(0, 10) : "", m: Math.max(0, +o.m || 0) };
+  } catch (e) {
+    return null;
+  }
+};
+function Arena({ rows, code, onAdd, onRemove }) {
+  const [txt, setTxt] = useState("");
+  const [msg, setMsg] = useState("");
+  const [copied, setCopied] = useState(false);
+  const idx = rows.findIndex((r) => r.src === "me");
+  const me = rows[idx];
+  let gapText = "Add a friend to start competing.";
+  if (rows.length > 1) {
+    if (idx > 0) {
+      const a = rows[idx - 1];
+      const g = a.cur - me.cur;
+      gapText = g <= 0 ? `Tied with ${a.name}. Study today to pull ahead.` : `${g} day${g > 1 ? "s" : ""} behind ${a.name}.`;
+    } else {
+      const b = rows[1];
+      const g = me.cur - b.cur;
+      gapText = g <= 0 ? `Tied with ${b.name} for first.` : `You lead ${b.name} by ${g} day${g > 1 ? "s" : ""}.`;
+    }
+  }
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (e) {
+      setMsg("Select the code and copy it manually.");
+    }
+  };
+  const add = () => {
+    const e = onAdd(txt);
+    if (e) setMsg(e);
+    else {
+      setMsg("");
+      setTxt("");
+    }
+  };
+  const cols = "grid grid-cols-[1.75rem_1fr_3.25rem_3.25rem_3.25rem] sm:grid-cols-[2rem_1fr_4rem_4rem_4rem_5rem] items-center gap-2";
+  return /* @__PURE__ */ React.createElement("section", { className: "lg:col-span-12 glass rounded-lg p-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-2" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold text-lg flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Trophy, { size: 18, className: "text-[#C8F54A]" }), "Friends Arena"), /* @__PURE__ */ React.createElement("span", { className: "text-sm text-[#8A948B]" }, gapText)), /* @__PURE__ */ React.createElement("div", { className: cols + " mt-5 px-3 text-[10px] uppercase tracking-widest text-[#6B746C]" }, /* @__PURE__ */ React.createElement("span", null, "#"), /* @__PURE__ */ React.createElement("span", null, "Name"), /* @__PURE__ */ React.createElement("span", { className: "text-right" }, "Streak"), /* @__PURE__ */ React.createElement("span", { className: "text-right" }, "Best"), /* @__PURE__ */ React.createElement("span", { className: "text-right" }, "Days"), /* @__PURE__ */ React.createElement("span", { className: "text-right hidden sm:block" }, "Hours")), /* @__PURE__ */ React.createElement("div", { className: "mt-2 space-y-1.5" }, rows.map((r, i) => /* @__PURE__ */ React.createElement(motion.div, { layout: true, key: r.id, className: cols + " rounded-md border px-3 py-2.5 " + (r.src === "me" ? "border-[#C8F54A]/50 bg-[#C8F54A]/10" : "border-[#262E28] bg-[#1B211C]") }, /* @__PURE__ */ React.createElement("span", { className: "font-mono text-sm text-[#8A948B]" }, i + 1), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-2 min-w-0" }, i === 0 && rows.length > 1 && /* @__PURE__ */ React.createElement(Trophy, { size: 14, className: "text-[#C8F54A] shrink-0" }), /* @__PURE__ */ React.createElement("span", { className: "truncate font-medium" }, r.name), /* @__PURE__ */ React.createElement("span", { className: "text-[10px] uppercase tracking-widest text-[#6B746C] shrink-0" }, r.src === "me" ? "You" : r.src === "device" ? "This device" : "Friend"), r.src === "friend" && /* @__PURE__ */ React.createElement("button", { "aria-label": "Remove " + r.name, onClick: () => onRemove(r.rid), className: "text-[#6B746C] hover:text-[#E5614F] shrink-0" }, /* @__PURE__ */ React.createElement(X, { size: 13 }))), /* @__PURE__ */ React.createElement("span", { className: "text-right font-mono font-semibold text-[#C8F54A]" }, r.cur), /* @__PURE__ */ React.createElement("span", { className: "text-right font-mono" }, r.longest), /* @__PURE__ */ React.createElement("span", { className: "text-right font-mono" }, r.total), /* @__PURE__ */ React.createElement("span", { className: "text-right font-mono text-sm text-[#8A948B] hidden sm:block" }, fmt(r.mins))))), /* @__PURE__ */ React.createElement("div", { className: "grid md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-[#262E28]" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "text-xs uppercase tracking-widest text-[#8A948B]" }, "Your challenge code"), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2 mt-2" }, /* @__PURE__ */ React.createElement("input", { readOnly: true, value: code, onFocus: (e) => e.target.select(), className: "min-w-0 flex-1 rounded-md bg-[#1B211C] border border-[#262E28] px-3 py-2 text-xs font-mono text-[#8A948B]" }), /* @__PURE__ */ React.createElement("button", { onClick: copy, className: "fire rounded-md px-4 py-2 text-sm font-semibold" }, copied ? "Copied" : "Copy")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-[#6B746C] mt-2" }, "Send this to a friend. Share a fresh code whenever you want your latest stats to show.")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "text-xs uppercase tracking-widest text-[#8A948B]" }, "Add a friend"), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2 mt-2" }, /* @__PURE__ */ React.createElement("input", { value: txt, onChange: (e) => setTxt(e.target.value), onKeyDown: (e) => e.key === "Enter" && add(), placeholder: "Paste friend's code", className: "min-w-0 flex-1 rounded-md bg-[#1B211C] border border-[#262E28] px-3 py-2 text-xs font-mono placeholder-[#6B746C]" }), /* @__PURE__ */ React.createElement("button", { onClick: add, disabled: !txt.trim(), className: "fire rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-40" }, "Add")), /* @__PURE__ */ React.createElement("p", { className: "text-xs mt-2 " + (msg ? "text-[#E5614F]" : "text-[#6B746C]") }, msg || "Paste a new code from the same friend to update their stats."))));
+}
+function Dashboard({ user, users, onLogout, onRename }) {
+  const now = useNow();
+  const today = key(now);
+  const dk = "ss:data:" + user.id;
+  const [rec, setRec] = useState(() => rd(dk, null) || { done: {}, mins: {}, goal: 4, start: key(/* @__PURE__ */ new Date()) });
+  useEffect(() => {
+    wr(dk, rec);
+  }, [rec]);
+  const [burst, setBurst] = useState(0);
+  useEffect(() => {
+    if (!burst) return;
+    const t = setTimeout(() => setBurst(0), 1600);
+    return () => clearTimeout(t);
+  }, [burst]);
+  const [view, setView] = useState(() => ({ y: now.getFullYear(), m: now.getMonth() }));
+  const [sel, setSel] = useState(today);
+  const [edit, setEdit] = useState(false);
+  const [nn, setNn] = useState(user.name);
+  const [err, setErr] = useState("");
+  const [cg, setCg] = useState("");
+  const { current, longest, total } = stats(rec.done, today);
+  const isDone = !!rec.done[today];
+  const tm = rec.mins[today] || 0;
+  const pct = Math.min(100, Math.round(tm / (rec.goal * 60) * 100));
+  const mid = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const left = Math.max(0, Math.floor((mid.getTime() - now.getTime()) / 1e3));
+  const hh = Math.floor(left / 3600), mm = Math.floor(left % 3600 / 60), ss = left % 60;
+  const quote = QUOTES[Math.abs(Math.floor(parse(today).getTime() / 864e5)) % QUOTES.length];
+  const complete = () => {
+    if (rec.done[today]) return;
+    setRec((r) => ({ ...r, done: { ...r.done, [today]: true } }));
+    setBurst(Date.now());
+  };
+  const addMins = (n) => setRec((r) => ({ ...r, mins: { ...r.mins, [today]: Math.max(0, (r.mins[today] || 0) + n) } }));
+  const setGoal = (g) => setRec((r) => ({ ...r, goal: g }));
+  const eligible = gap(rec.start, today) + (isDone ? 0 : 0) + 1 - (isDone ? 0 : 1);
+  const rate = eligible > 0 ? Math.round(Object.keys(rec.done).filter((k) => rec.done[k]).length / eligible * 100) : 0;
+  const totalMins = Object.values(rec.mins).reduce((a, b) => a + b, 0);
+  const rk = "ss:rivals:" + user.id;
+  const [rivals, setRivals] = useState(() => rd(rk, {}));
+  useEffect(() => {
+    wr(rk, rivals);
+  }, [rivals]);
+  const lastOf = (d) => Object.keys(d).filter((k) => d[k]).sort().pop() || "";
+  const rowOf = (id, name, r, src) => {
+    if (!r || !r.done) return null;
+    const st = stats(r.done, today);
+    return { id, name, src, cur: st.current, longest: st.longest, total: st.total, mins: Object.values(r.mins || {}).reduce((a, b) => a + (+b || 0), 0) };
+  };
+  const mineRow = rowOf(user.id, user.name, rec, "me");
+  const deviceRows = users.filter((u) => u.id !== user.id).map((u) => rowOf(u.id, u.name, rd("ss:data:" + u.id, null), "device")).filter(Boolean);
+  const friendRows = Object.values(rivals).map((r) => ({ id: "f" + r.i, rid: r.i, name: r.n, src: "friend", cur: r.d && r.d >= addDays(today, -1) ? r.c : 0, longest: r.l, total: r.t, mins: r.m }));
+  const arenaRows = [mineRow, ...deviceRows, ...friendRows].sort((a, b) => b.cur - a.cur || b.longest - a.longest || b.total - a.total);
+  const myCode = "SS1." + btoa(unescape(encodeURIComponent(JSON.stringify({ i: user.id, n: user.name, c: current, l: longest, t: total, d: lastOf(rec.done), m: totalMins }))));
+  const addRival = (t) => {
+    const o = parseCode(t);
+    if (!o) return "That code is not valid. Ask your friend to copy it again.";
+    if (o.i === user.id) return "That is your own code.";
+    if (users.some((u) => u.id === o.i)) return "That profile is already on this device.";
+    setRivals((r) => ({ ...r, [o.i]: o }));
+    return "";
+  };
+  const removeRival = (i) => setRivals((r) => {
+    const n = { ...r };
+    delete n[i];
+    return n;
+  });
+  const monthPrefix = `${view.y}-${pad(view.m + 1)}`;
+  const monthDone = Object.keys(rec.done).filter((k) => rec.done[k] && k.startsWith(monthPrefix)).length;
+  const first = new Date(view.y, view.m, 1).getDay();
+  const dim = new Date(view.y, view.m + 1, 0).getDate();
+  const cells = [...Array(first).fill(null), ...Array.from({ length: dim }, (_, i) => `${monthPrefix}-${pad(i + 1)}`)];
+  const atCurrent = view.y === now.getFullYear() && view.m === now.getMonth();
+  const nav = (d) => setView((v) => {
+    const x = new Date(v.y, v.m + d, 1);
+    return { y: x.getFullYear(), m: x.getMonth() };
+  });
+  let selText = "";
+  if (sel > today) selText = "Upcoming day. Future dates cannot be marked.";
+  else if (rec.done[sel]) selText = `Completed${rec.mins[sel] ? ", " + fmt(rec.mins[sel]) + " logged" : ""}.`;
+  else if (sel === today) selText = "Today is not completed yet.";
+  else if (sel >= rec.start) selText = "Missed. The streak broke on this day.";
+  else selText = "No record. This is before you joined.";
+  const save = () => {
+    const e = onRename(nn);
+    if (e) setErr(e);
+    else {
+      setErr("");
+      setEdit(false);
+    }
+  };
+  const tile = (Icon, label, val, c) => /* @__PURE__ */ React.createElement("div", { className: "glass rounded-lg p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-[#8A948B] text-xs uppercase tracking-widest" }, /* @__PURE__ */ React.createElement(Icon, { size: 15, className: c }), label), /* @__PURE__ */ React.createElement("div", { className: "font-display font-bold text-2xl mt-2" }, val));
+  return /* @__PURE__ */ React.createElement("div", { className: "bg" }, burst > 0 && /* @__PURE__ */ React.createElement(Burst, { key: burst }), /* @__PURE__ */ React.createElement("nav", { className: "sticky top-0 z-40 glass border-x-0 border-t-0 rounded-none", style: { paddingTop: "env(safe-area-inset-top,0px)" } }, /* @__PURE__ */ React.createElement("div", { className: "max-w-6xl mx-auto px-4 h-16 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Flame, { className: "text-[#C8F54A]", size: 24 }), /* @__PURE__ */ React.createElement("span", { className: "font-display font-extrabold tracking-wider" }, "STUDY STREAK")), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm text-[#C5CCC0] max-w-[120px] truncate" }, user.name), /* @__PURE__ */ React.createElement("button", { "aria-label": "Change display name", onClick: () => {
+    setNn(user.name);
+    setErr("");
+    setEdit(true);
+  }, className: "p-2 rounded-lg hover:bg-[#222a23] transition" }, /* @__PURE__ */ React.createElement(Pencil, { size: 16 })), /* @__PURE__ */ React.createElement("button", { onClick: onLogout, className: "flex items-center gap-1.5 rounded-lg border border-[#262E28] px-3 py-2 text-sm hover:bg-[#222a23] transition" }, /* @__PURE__ */ React.createElement(LogOut, { size: 15 }), "Logout")))), /* @__PURE__ */ React.createElement("main", { className: "max-w-6xl mx-auto px-4 py-8 grid lg:grid-cols-12 gap-6" }, /* @__PURE__ */ React.createElement("div", { className: "lg:col-span-7 space-y-6" }, /* @__PURE__ */ React.createElement(motion.section, { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, className: "glass rounded-lg p-6 sm:p-8 text-left" }, /* @__PURE__ */ React.createElement("p", { className: "text-[#C5CCC0]" }, "Hello, ", user.name, "! Ready to study today?"), /* @__PURE__ */ React.createElement("div", { className: "mt-4 inline-flex text-[#C8F54A]" }, /* @__PURE__ */ React.createElement(Flame, { size: 40, className: "text-[#C8F54A]" })), /* @__PURE__ */ React.createElement("div", { className: "font-display font-extrabold text-8xl sm:text-9xl leading-none mt-2 text-[#C8F54A]" }, current), /* @__PURE__ */ React.createElement("div", { className: "uppercase tracking-[.3em] text-xs text-[#8A948B] mt-3" }, "day streak"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-[#8A948B] mt-3 min-h-[20px]" }, isDone ? "Locked in for today. See you tomorrow." : current > 0 ? `Complete today to keep your ${current}-day streak alive.` : "No active streak. Complete today to start Day 1."), /* @__PURE__ */ React.createElement("div", { className: "mt-7 border-t border-[#262E28] pt-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between text-xs uppercase tracking-widest text-[#8A948B]" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Clock, { size: 14 }), "Day closes at 12:00 AM"), /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, Math.round((86400 - left) / 864), "% gone")), /* @__PURE__ */ React.createElement("div", { className: "mt-3 flex items-end font-mono font-semibold tabular-nums leading-none text-[#E9EDE4] text-5xl sm:text-6xl" }, /* @__PURE__ */ React.createElement("span", null, pad(hh)), /* @__PURE__ */ React.createElement("span", { className: "text-[#C8F54A] text-2xl sm:text-3xl mb-1 mx-0.5" }, "h"), /* @__PURE__ */ React.createElement("span", { className: "ml-3" }, pad(mm)), /* @__PURE__ */ React.createElement("span", { className: "text-[#C8F54A] text-2xl sm:text-3xl mb-1 mx-0.5" }, "m"), /* @__PURE__ */ React.createElement("span", { className: "ml-3" }, pad(ss)), /* @__PURE__ */ React.createElement("span", { className: "text-[#C8F54A] text-2xl sm:text-3xl mb-1 mx-0.5" }, "s")), /* @__PURE__ */ React.createElement("div", { className: "mt-4 grid grid-cols-24 gap-[3px]", style: { gridTemplateColumns: "repeat(24,minmax(0,1fr))" } }, Array.from({ length: 24 }, (_, i) => {
+    const cur = i === now.getHours();
+    const past = i < now.getHours();
+    return /* @__PURE__ */ React.createElement("div", { key: i, title: pad(i) + ":00", className: "h-5 rounded-[2px] " + (past ? "bg-[#2c372e]" : cur ? "bg-[#C8F54A]" : "bg-transparent border border-[#2c372e]") });
+  })), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between text-[10px] font-mono text-[#6B746C] mt-1.5" }, /* @__PURE__ */ React.createElement("span", null, "00"), /* @__PURE__ */ React.createElement("span", null, "06"), /* @__PURE__ */ React.createElement("span", null, "12"), /* @__PURE__ */ React.createElement("span", null, "18"), /* @__PURE__ */ React.createElement("span", null, "24"))), /* @__PURE__ */ React.createElement(
+    motion.button,
+    {
+      whileHover: isDone ? {} : { scale: 1.02 },
+      whileTap: isDone ? {} : { scale: 0.97 },
+      onClick: complete,
+      disabled: isDone,
+      className: "mt-7 w-full rounded-md py-4 font-display font-bold tracking-wide text-[#0c0f0b] transition " + (isDone ? "bg-[#1B211C] text-[#C8F54A] border border-[#C8F54A]/40 cursor-default" : "fire")
+    },
+    isDone ? "COMPLETED FOR TODAY \u2713" : "COMPLETE TODAY\u2019S STUDY \u2713"
+  )), /* @__PURE__ */ React.createElement("section", { className: "glass rounded-lg p-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold text-lg flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Timer, { size: 18, className: "text-[#C8F54A]" }), "Today\u2019s progress"), /* @__PURE__ */ React.createElement("span", { className: "text-sm text-[#8A948B]" }, fmt(tm), " of ", rec.goal, "h")), /* @__PURE__ */ React.createElement("div", { className: "mt-4 h-3 rounded-sm bg-[#222a23] overflow-hidden" }, /* @__PURE__ */ React.createElement(motion.div, { className: pct >= 100 ? "h-full bg-[#C8F54A]" : "h-full bg-[#E9EDE4]", animate: { width: pct + "%" }, transition: { duration: 0.6 } })), /* @__PURE__ */ React.createElement("div", { className: "text-right text-xs text-[#6B746C] mt-1" }, pct, "%"), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2 mt-3" }, [15, 30, 60].map((n) => /* @__PURE__ */ React.createElement("button", { key: n, onClick: () => addMins(n), className: "flex items-center gap-1 rounded-lg border border-[#262E28] bg-[#1B211C] px-3 py-2 text-sm hover:border-[#C8F54A]/60 transition" }, /* @__PURE__ */ React.createElement(Plus, { size: 13 }), n === 60 ? "1 hour" : n + " min")), /* @__PURE__ */ React.createElement("button", { onClick: () => addMins(-tm), className: "rounded-lg border border-[#262E28] px-3 py-2 text-sm text-[#8A948B] hover:bg-[#222a23] transition" }, "Reset")), /* @__PURE__ */ React.createElement("div", { className: "mt-6 text-xs uppercase tracking-widest text-[#8A948B]" }, "Daily study goal"), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 mt-2" }, [2, 4, 6].map((g) => /* @__PURE__ */ React.createElement("button", { key: g, onClick: () => {
+    setGoal(g);
+    setCg("");
+  }, className: "rounded-lg px-4 py-2 text-sm border transition " + (rec.goal === g ? "fire border-transparent text-[#0c0f0b]" : "border-[#262E28] bg-[#1B211C] hover:border-[#C8F54A]/60") }, g, " hours")), /* @__PURE__ */ React.createElement("input", { type: "number", min: "0.5", max: "24", step: "0.5", value: cg, placeholder: "Custom hrs", onChange: (e) => {
+    setCg(e.target.value);
+    const n = parseFloat(e.target.value);
+    if (n > 0 && n <= 24) setGoal(n);
+  }, className: "w-28 rounded-lg bg-[#1B211C] border border-[#262E28] px-3 py-2 text-sm placeholder-[#6B746C]" })))), /* @__PURE__ */ React.createElement("div", { className: "lg:col-span-5 space-y-6" }, /* @__PURE__ */ React.createElement("section", { className: "glass rounded-lg p-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h2", { className: "font-display font-bold text-lg" }, new Date(view.y, view.m, 1).toLocaleDateString(void 0, { month: "long", year: "numeric" })), /* @__PURE__ */ React.createElement("div", { className: "flex gap-1" }, /* @__PURE__ */ React.createElement("button", { "aria-label": "Previous month", onClick: () => nav(-1), className: "p-2 rounded-lg hover:bg-[#222a23]" }, /* @__PURE__ */ React.createElement(ChevronLeft, { size: 18 })), /* @__PURE__ */ React.createElement("button", { "aria-label": "Next month", disabled: atCurrent, onClick: () => nav(1), className: "p-2 rounded-lg hover:bg-[#222a23] disabled:opacity-30" }, /* @__PURE__ */ React.createElement(ChevronRight, { size: 18 })))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-7 gap-1.5 mt-4 text-center text-[11px] text-[#6B746C]" }, ["S", "M", "T", "W", "T", "F", "S"].map((d, i) => /* @__PURE__ */ React.createElement("div", { key: i }, d))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-7 gap-1.5 mt-2" }, cells.map((k, i) => {
+    if (!k) return /* @__PURE__ */ React.createElement("div", { key: i });
+    const done = rec.done[k], future = k > today, missed = !done && !future && k < today && k >= rec.start, isT = k === today;
+    let cls = "bg-[#1B211C] text-[#8A948B]";
+    if (done) cls = "bg-[#C8F54A] text-[#0c0f0b] border-[#C8F54A] font-semibold";
+    else if (missed) cls = "bg-transparent text-[#E5614F] border-[#E5614F]/40";
+    else if (future) cls = "bg-transparent text-[#4A524B]";
+    return /* @__PURE__ */ React.createElement("button", { key: k, onClick: () => setSel(k), className: "relative aspect-square rounded-lg border text-sm flex flex-col items-center justify-center transition hover:brightness-125 " + (cls.includes("border") ? "" : "border-transparent ") + cls + (isT ? " ring-2 ring-[#E9EDE4]" : "") + (sel === k ? " outline outline-1 outline-white/60" : "") }, /* @__PURE__ */ React.createElement("span", { className: "leading-none" }, +k.slice(8)), done && /* @__PURE__ */ React.createElement(Check, { size: 13, className: "mt-0.5" }), missed && /* @__PURE__ */ React.createElement(X, { size: 13, className: "mt-0.5" }));
+  })), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-4 mt-4 text-[11px] text-[#8A948B]" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { className: "w-2.5 h-2.5 rounded-sm bg-[#C8F54A]" }), "Completed"), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { className: "w-2.5 h-2.5 rounded-sm bg-[#E5614F]" }), "Missed"), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { className: "w-2.5 h-2.5 rounded-sm ring-2 ring-[#E9EDE4]" }), "Today")), /* @__PURE__ */ React.createElement("div", { className: "mt-4 rounded-md bg-[#1B211C] border border-[#262E28] p-3 text-sm" }, /* @__PURE__ */ React.createElement("div", { className: "text-[#8A948B] text-xs" }, parse(sel).toLocaleDateString(void 0, { weekday: "long", day: "numeric", month: "long", year: "numeric" })), /* @__PURE__ */ React.createElement("div", { className: "mt-1" }, selText))), /* @__PURE__ */ React.createElement("section", { className: "glass rounded-lg p-6" }, /* @__PURE__ */ React.createElement(Quote, { size: 20, className: "text-[#C8F54A]" }), /* @__PURE__ */ React.createElement("p", { className: "font-display font-semibold text-lg mt-3 leading-snug" }, quote), /* @__PURE__ */ React.createElement("div", { className: "text-xs text-[#6B746C] mt-3" }, "Quote of the day"))), /* @__PURE__ */ React.createElement("div", { className: "lg:col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-4" }, tile(Flame, "Current streak", current + (current === 1 ? " day" : " days"), "text-[#C8F54A]"), tile(Trophy, "Longest streak", longest + (longest === 1 ? " day" : " days"), "text-[#C8F54A]"), tile(CalendarDays, "Total study days", String(total), "text-[#C8F54A]"), tile(Target, "Daily goal", rec.goal + " hours", "text-[#C8F54A]")), /* @__PURE__ */ React.createElement("div", { className: "lg:col-span-12 grid grid-cols-3 gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "glass rounded-lg p-4" }, /* @__PURE__ */ React.createElement("div", { className: "text-xs text-[#8A948B]" }, "This month"), /* @__PURE__ */ React.createElement("div", { className: "font-display font-bold text-xl mt-1" }, monthDone, " days")), /* @__PURE__ */ React.createElement("div", { className: "glass rounded-lg p-4" }, /* @__PURE__ */ React.createElement("div", { className: "text-xs text-[#8A948B]" }, "Consistency"), /* @__PURE__ */ React.createElement("div", { className: "font-display font-bold text-xl mt-1" }, rate, "%")), /* @__PURE__ */ React.createElement("div", { className: "glass rounded-lg p-4" }, /* @__PURE__ */ React.createElement("div", { className: "text-xs text-[#8A948B]" }, "Hours logged"), /* @__PURE__ */ React.createElement("div", { className: "font-display font-bold text-xl mt-1" }, fmt(totalMins)))), /* @__PURE__ */ React.createElement(Arena, { rows: arenaRows, code: myCode, onAdd: addRival, onRemove: removeRival })), /* @__PURE__ */ React.createElement("footer", { className: "max-w-6xl mx-auto px-4 pb-10" }, /* @__PURE__ */ React.createElement("div", { className: "glass rounded-lg p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "font-display font-extrabold tracking-wider" }, "RAJDEEP MAJI"), /* @__PURE__ */ React.createElement("div", { className: "text-xs text-[#8A948B] mt-1" }, "Creator of STUDY STREAK")), /* @__PURE__ */ React.createElement(Socials, null))), /* @__PURE__ */ React.createElement(AnimatePresence, null, edit && /* @__PURE__ */ React.createElement(motion.div, { className: "fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4", initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, onClick: () => setEdit(false) }, /* @__PURE__ */ React.createElement(motion.div, { initial: { scale: 0.95, y: 10 }, animate: { scale: 1, y: 0 }, className: "glass rounded-lg p-6 w-full max-w-sm", style: { background: "rgba(18,24,19,.82)" }, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("h3", { className: "font-display font-bold text-lg" }, "Change display name"), /* @__PURE__ */ React.createElement("input", { autoFocus: true, value: nn, maxLength: 24, onChange: (e) => setNn(e.target.value), onKeyDown: (e) => e.key === "Enter" && save(), className: "mt-4 w-full rounded-md bg-[#1B211C] border border-[#262E28] px-4 py-3" }), err && /* @__PURE__ */ React.createElement("div", { className: "text-[#E5614F] text-sm mt-2" }, err), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2 mt-4 justify-end" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setEdit(false), className: "rounded-lg border border-[#262E28] px-4 py-2 text-sm" }, "Cancel"), /* @__PURE__ */ React.createElement("button", { onClick: save, className: "fire rounded-lg px-4 py-2 text-sm font-semibold text-[#0c0f0b]" }, "Save"))))));
+}
+function App() {
+  const [users, setUsers] = useState(() => rd("ss:users", {}));
+  const [cur, setCur] = useState(() => rd("ss:last", null));
+  const [welcome, setWelcome] = useState(null);
+  const user = cur && users[cur] ? users[cur] : null;
+  const login = (name) => {
+    let u = Object.values(users).find((x) => x.name.toLowerCase() === name.toLowerCase());
+    let all = users;
+    if (!u) {
+      u = { id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name };
+      all = { ...users, [u.id]: u };
+      setUsers(all);
+      wr("ss:users", all);
+    }
+    wr("ss:last", u.id);
+    setCur(u.id);
+    setWelcome(u.name);
+    setTimeout(() => setWelcome(null), 1900);
+  };
+  const logout = () => {
+    wr("ss:last", null);
+    setCur(null);
+  };
+  const rename = (n) => {
+    n = n.trim();
+    if (!n) return "Name cannot be empty.";
+    if (Object.values(users).some((x) => x.id !== cur && x.name.toLowerCase() === n.toLowerCase())) return "That name is already used by another profile.";
+    const all = { ...users, [cur]: { ...users[cur], name: n } };
+    setUsers(all);
+    wr("ss:users", all);
+    return "";
+  };
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, user ? /* @__PURE__ */ React.createElement(Dashboard, { key: user.id, user, users: Object.values(users), onLogout: logout, onRename: rename }) : /* @__PURE__ */ React.createElement(Login, { users: Object.values(users), onLogin: login }), /* @__PURE__ */ React.createElement(AnimatePresence, null, welcome && /* @__PURE__ */ React.createElement(motion.div, { className: "fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[#0F1210]", initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.4 } }, /* @__PURE__ */ React.createElement(motion.div, { initial: { scale: 0.4, opacity: 0 }, animate: { scale: 1, opacity: 1 }, transition: { type: "spring", stiffness: 140, damping: 12 } }, /* @__PURE__ */ React.createElement(Flame, { size: 84, className: "text-[#C8F54A]" })), /* @__PURE__ */ React.createElement(motion.h2, { initial: { y: 16, opacity: 0 }, animate: { y: 0, opacity: 1 }, transition: { delay: 0.3 }, className: "font-display font-extrabold text-3xl mt-6" }, "Welcome, ", welcome), /* @__PURE__ */ React.createElement(motion.p, { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.7 }, className: "text-[#8A948B] mt-2" }, "Let\u2019s build your streak."))));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
+
+</script>
+</body>
+</html>
